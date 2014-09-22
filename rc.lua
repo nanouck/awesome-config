@@ -372,8 +372,8 @@ awful.rules.rules = {
       properties = { floating = true } },
     { rule = { class = "gimp" },
       properties = { floating = true } },
-    -- Set Firefox to always map on tags number www_tag_id of screen main_screen_id.
-    { rule = { class = "Firefox" },
+    -- Set Firefox/chromium to always map on tags number www_tag_id of screen main_screen_id.
+    { rule = { class = "Navigator" },
        properties = { switchtotag = true, tag = tags[main_screen_id][www_tag_id] } },
     -- Set Thunderbird to always map on tags number mail_tag_id of screen main_screen_id.
     { rule = { class = "Thunderbird" },
@@ -392,7 +392,7 @@ awful.rules.rules = {
        properties = { floating=true,
 		      maximized_vertical=false, maximized_horizontal=false,
 		      tag = tags[main_screen_id][im_tag_id] },
-    callback = function (c)
+      callback = function (c)
         local cl_width = 250    -- width of buddy list window
         local def_left = true   -- default placement. note: you have to restart
                                 -- pidgin for changes to take effect
@@ -408,7 +408,7 @@ awful.rules.rules = {
                             width=cl_strut.left}
             elseif cl_strut.right ~= nil and cl_strut.right > 0 then
                 geometry = {x=scr_area.x+scr_area.width, y=scr_area.y,
-                            width=cl_strut.right, height=scr_area.height}
+                            width=cl_strut.right}
             end
         end
         -- scr_area is unaffected, so we can use the naive coordinates
@@ -425,7 +425,9 @@ awful.rules.rules = {
         end
         c:geometry(geometry)
     end },
-     
+    -- Set Remmina to always map on tags number rdesktop_tag_id of screen main_screen_id.
+    { rule = { class = "Remmina" },
+      properties = { tag = tags[main_screen_id][rdesktop_tag_id] } },
 }
 -- }}}
 
@@ -470,12 +472,15 @@ function run_once(cmd)
 end
 
 awful.util.spawn_with_shell("numlockx")
+run_once("davmail")
+
 run_once("thunderbird")
 run_once("firefox")
 --run_once("xchat")
 run_once("pidgin")
 run_once("steam")
 run_once("spotify")
+run_once("remmina")
 run_once("gnome-screensaver")
 run_once('~/.config/awesome/locker.sh')
 awful.util.spawn_with_shell("dropbox running && dropbox start")
