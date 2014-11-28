@@ -10,6 +10,9 @@ require("naughty")
 -- Load Debian menu entries
 require("debian.menu")
 
+-- Load the widget.
+local APW = require("apw/widget")
+
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
 -- another config (This code will only ever execute for the fallback config)
@@ -211,6 +214,7 @@ for s = 1, screen.count() do
         },
         mylayoutbox[s],
         mytextclock,
+	s == 1 and APW or nil,
         s == 1 and mysystray or nil,
         mytasklist[s],
         layout = awful.widget.layout.horizontal.rightleft
@@ -275,6 +279,11 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey, "Shift"   }, "space", function () awful.layout.inc(layouts, -1) end),
 
     awful.key({ modkey, "Control" }, "n", awful.client.restore),
+
+    -- Configure the hotkeys.
+    awful.key({  }, "XF86AudioRaiseVolume",  APW.Up),
+    awful.key({  }, "XF86AudioLowerVolume",  APW.Down),
+    awful.key({  }, "XF86AudioMute",         APW.ToggleMute),
 
     -- Prompt
     awful.key({ modkey },            "r",     function () mypromptbox[mouse.screen]:run() end),
@@ -474,6 +483,8 @@ end
 awful.util.spawn_with_shell("numlockx")
 run_once("davmail")
 
+run_once("nm-applet")
+run_once("blueman-applet")
 run_once("thunderbird")
 run_once("firefox")
 --run_once("xchat")
