@@ -7,18 +7,22 @@ require("beautiful")
 -- Notification library
 require("naughty")
 
--- Load Debian menu entries
-require("debian.menu")
-
 -- Load the widget.
 local APW = require("apw/widget")
 
-function dbg (s,...)
-      file = io.open("/tmp/rc.lua.log", "a")
-      file:write(s:format(...) .. "\n")
-      file:close()
-end
-
+-- Freedesktop integration
+-- FIXME for 3,5 since freedesktop is not compatabible
+require("freedesktop.utils")
+require("freedesktop.menu")
+require("freedesktop.desktop")
+-- use local keyword for awesome 3.5 compatability
+-- calendar functions
+local calendar2 = require("calendar2")
+-- Extra widgets
+local vicious = require("vicious")
+-- to create shortcuts help screen
+local keydoc = require("keydoc")
+ 
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
 -- another config (This code will only ever execute for the fallback config)
@@ -54,6 +58,9 @@ terminal = "x-terminal-emulator"
 editor = os.getenv("EDITOR") or "editor"
 editor_cmd = terminal .. " -e " .. editor
 
+freedesktop.utils.terminal = terminal
+freedesktop.utils.icon_theme = 'gnome'
+
 -- Default modkey.
 -- Usually, Mod4 is the key with a logo between Control and Alt.
 -- If you do not like this or do not have such a key,
@@ -82,40 +89,28 @@ layouts =
 -- {{{ Tags
 
 mytags = {}
-
-dbg("Screen count")
-dbg("%s",screen.count())
-hostname = awful.util.pread("hostname"):gsub("\n$", "")
-dbg("hostname: <%s>", hostname)
-dbg("%s", type(hostname))
-if hostname == "delyn-H87-D3H" then
-   location = "HOME"
-else
-   location = "WORK"
-end
-dbg("location: %s", location)
-
 if screen.count() == 1 then
    main_screen_id = 1
-elseif location == "HOME" then
-   dbg("using home config")
-   main_screen_id = 2
-   mytags[1] = {
-      names =  { "work" },
-      layouts = { layouts[2] }
-   }
-elseif location == "WORK" then
-   dbg("using work config")
+else if screen.count() == 3 then
    main_screen_id = 1
    mytags[2] = {
       names =  { "work" },
       layouts = { layouts[2] }
    }
+   mytags[3] = {
+      names =  { "work" },
+      layouts = { layouts[2] }
+   }
 else
-   error("unsupported configuration")
+   main_screen_id = 1
+   mytags[2] = {
+      names =  { "work" },
+      layouts = { layouts[2] }
+   }
+   
+end
 end
 
-dbg("main screen id: %d", main_screen_id)
 mytags[main_screen_id] = {
    names   = { "work",      "mail",      "www",       "irc",
 	       "im",        "av",        "game",      "rdesktop",
@@ -144,26 +139,100 @@ end
 
 -- {{{ Menu
 -- Create a laucher widget and a main menu
-myawesomemenu = {
-   { "manual", terminal .. " -e man awesome" },
-   { "edit config", editor_cmd .. " " .. awesome.conffile },
-   { "restart", awesome.restart },
-   { "quit", awesome.quit }
-}
-
-mymainmenu = awful.menu({ items = { { "awesome", myawesomemenu, beautiful.awesome_icon },
-                                    { "Debian", debian.menu.Debian_menu.Debian },
-                                    { "open terminal", terminal }
-                                  }
-                        })
+ mysystem_menu = {
+    { 'Lock Screen', 'gnome-screensaver-command --lock', freedesktop.utils.lookup_icon({ icon = 'system-lock-screen' }) },
+    { 'Logout', awesome.quit, freedesktop.utils.lookup_icon({ icon = 'system-log-out' }) },
+    { 'Reboot System', 'xdg-su -c "shutdown -r now"', freedesktop.utils.lookup_icon({ icon = 'reboot-notifier' }) },
+    { 'Shutdown System', 'xdg-su -c "shutdown -h now"', freedesktop.utils.lookup_icon({ icon = 'system-shutdown' }) }
+ }
+ myawesome_menu = {
+    { 'Restart Awesome', awesome.restart, freedesktop.utils.lookup_icon({ icon = 'gtk-refresh' }) },
+    { "Edit config", editor_cmd .. " " .. awful.util.getdir("config") .. "/rc.lua", freedesktop.utils.lookup_icon({ icon = 'package_settings' }) },
+    { "manual", terminal .. " -e man awesome" }
+ }
+ top_menu = {
+    { 'Applications', freedesktop.menu.new(), freedesktop.utils.lookup_icon({ icon = 'start-here' }) },
+    { 'Awesome', myawesome_menu, beautiful.awesome_icon },
+    { 'System', mysystem_menu, freedesktop.utils.lookup_icon({ icon = 'system' }) },
+    { 'Terminal', freedesktop.utils.terminal, freedesktop.utils.lookup_icon({ icon = 'terminal' }) }
+ }
+ mymainmenu = awful.menu.new({ items = top_menu, width = 150 })
 
 mylauncher = awful.widget.launcher({ image = image(beautiful.awesome_icon),
                                      menu = mymainmenu })
 -- }}}
 
 -- {{{ Wibox
+spacer = widget({type = "textbox"})
+separator = widget({type = "textbox"})
+spacer.text = " "
+separator.text = "|"
+
 -- Create a textclock widget
 mytextclock = awful.widget.textclock({ align = "right" })
+
+calendar2.addCalendarToWidget(mytextclock, "<span color='green'>%s</span>")
+
+mycpuwidget = widget({ type = "textbox" })
+vicious.register(mycpuwidget, vicious.widgets.cpu, "$1%")
+
+mybattery = widget({ type = "textbox"})
+vicious.register(mybattery, function(format, warg)
+  local args = vicious.widgets.bat(format, warg)
+  if args[2] < 50 then
+    args['{color}'] = 'red'
+  else
+    args['{color}'] = 'green'
+  end
+  return args
+end, '<span foreground="${color}">bat: $2% $3h</span>', 10, 'BAT0')
+
+-- Initialize widget
+mynetwidget = widget({ type = "textbox" })
+-- Register widget
+vicious.register(mynetwidget, vicious.widgets.net, "${eth0 down_kb} / ${eth0 up_kb}", 1)
+
+-- wifi
+-- provides wireless information for a requested interface
+-- takes the network interface as an argument, i.e. "wlan0"
+-- returns a table with string keys: {ssid}, {mode}, {chan}, {rate}, {link}, {linp} and {sign}
+wifi = widget({ type = "textbox" })
+vicious.register(wifi, vicious.widgets.wifi, "${link}", 121, "wlan0")
+
+-- Weather widget
+myweatherwidget = widget({ type = "textbox" })
+weather_t = awful.tooltip({ objects = { myweatherwidget },})
+vicious.register(myweatherwidget, vicious.widgets.weather,
+		function (widget, args)
+                  weather_t:set_text("City: " .. args["{city}"] .."\nWind: " .. args["{windkmh}"] .. "km/h " .. args["{wind}"] .. "\nSky: " .. args["{sky}"] .. "\nHumidity: " .. args["{humid}"] .. "%")
+                  return args["{tempc}"] .. "C"
+                end, 1800, "EDDN")
+                --'1800': check every 30 minutes.
+                --'EDDN': Nuernberg ICAO code.
+
+-- Keyboard map indicator and changer
+-- https://awesome.naquadah.org/wiki/Change_keyboard_maps
+-- default keyboard is us, second is german adapt to your needs
+--
+
+-- Keyboard map indicator and changer
+ kbdcfg = {}
+ kbdcfg.cmd = "setxkbmap"
+ kbdcfg.layout = { { "fr", "FR" }, { "us", "EN" } }
+ kbdcfg.current = 1 --  fr is our default layout
+ kbdcfg.widget = widget({ type = "textbox", align = "right" })
+ kbdcfg.widget.text = " " .. kbdcfg.layout[kbdcfg.current][1] .. " "
+ kbdcfg.switch = function ()
+ kbdcfg.current = kbdcfg.current % #(kbdcfg.layout) + 1
+ local t = kbdcfg.layout[kbdcfg.current]
+ kbdcfg.widget.text = " " .. t[1] .. " "
+ os.execute( kbdcfg.cmd .. " " .. t[1] .. " " .. t[2] )
+ end
+                                          
+-- Mouse bindings
+kbdcfg.widget:buttons(awful.util.table.join(
+    awful.button({ }, 1, function () kbdcfg.switch() end)
+))
 
 -- Create a systray
 mysystray = widget({ type = "systray" })
@@ -243,14 +312,58 @@ for s = 1, screen.count() do
             layout = awful.widget.layout.horizontal.leftright
         },
         mylayoutbox[s],
+
         mytextclock,
-	s == main_screen_id and APW or nil,
+	    separator,
+	    spacer,
+
+        s == main_screen_id and APW or nil,
+        s == main_screen_id and spacer or nil,
+        s == main_screen_id and separator or nil,
+        s == main_screen_id and spacer or nil,
+
+        s == main_screen_id and kbdcfg.widget or nil,
+        s == main_screen_id and spacer or nil,
+        s == main_screen_id and separator or nil,
+        s == main_screen_id and spacer or nil,
+
+        mycpuwidget,
+        spacer,
+        separator,
+        spacer,
+
+        mybattery,
+        spacer,
+        separator,
+        spacer,
+
+        mynetwidget,
+        spacer,
+        separator,
+        spacer,
+
+        wifi,
+        spacer,
+        separator,
+        spacer,
+
+        myweatherwidget,
+        spacer,
+        separator,
+        spacer,
+
         s == main_screen_id and mysystray or nil,
         mytasklist[s],
         layout = awful.widget.layout.horizontal.rightleft
     }
 end
 -- }}}
+
+-- these are needed by the keydoc a better solution would be to place them in theme.lua
+-- but leaving them here also provides a mean to change the colors here ;)
+beautiful.fg_widget_value="green"
+beautiful.fg_widget_clock="gold"
+beautiful.fg_widget_value_important="red"
 
 -- {{{ Mouse bindings
 root.buttons(awful.util.table.join(
@@ -414,8 +527,6 @@ awful.rules.rules = {
     -- Set Firefox/chromium to always map on tags number www_tag_id of screen main_screen_id.
     { rule = { class = "Navigator" },
        properties = { switchtotag = true, tag = tags[main_screen_id][www_tag_id] } },
-    { rule = { class = "Firefox" },
-       properties = { switchtotag = true, tag = tags[main_screen_id][www_tag_id] } },
     -- Set Thunderbird to always map on tags number mail_tag_id of screen main_screen_id.
     { rule = { class = "Thunderbird" },
       properties = { tag = tags[main_screen_id][mail_tag_id] } },
@@ -528,3 +639,6 @@ run_once("gnome-screensaver")
 run_once('~/.config/awesome/locker.sh')
 awful.util.spawn_with_shell("dropbox running && dropbox start")
 run_once("caffeine")
+
+-- workaround
+awful.util.spawn_with_shell("setxkbmap fr")

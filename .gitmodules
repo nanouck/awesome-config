@@ -1,3 +1,9 @@
-[submodule "./apw"]
+[submodule "apw"]
 	path = apw
 	url = https://github.com/jlep/apw
+[submodule "awesome-branding-opensuse"]
+	path = awesome-branding-opensuse
+	url = https://github.com/madanyang/awesome-branding-opensuse
+[submodule "awesome-freedesktop"]
+	path = awesome-freedesktop
+	url = https://github.com/terceiro/awesome-freedesktop
