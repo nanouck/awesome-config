@@ -13,6 +13,12 @@ require("debian.menu")
 -- Load the widget.
 local APW = require("apw/widget")
 
+function dbg (s,...)
+      file = io.open("/tmp/rc.lua.log", "a")
+      file:write(s:format(...) .. "\n")
+      file:close()
+end
+
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
 -- another config (This code will only ever execute for the fallback config)
@@ -76,16 +82,40 @@ layouts =
 -- {{{ Tags
 
 mytags = {}
+
+dbg("Screen count")
+dbg("%s",screen.count())
+hostname = awful.util.pread("hostname"):gsub("\n$", "")
+dbg("hostname: <%s>", hostname)
+dbg("%s", type(hostname))
+if hostname == "delyn-H87-D3H" then
+   location = "HOME"
+else
+   location = "WORK"
+end
+dbg("location: %s", location)
+
 if screen.count() == 1 then
    main_screen_id = 1
-else
+elseif location == "HOME" then
+   dbg("using home config")
+   main_screen_id = 2
+   mytags[1] = {
+      names =  { "work" },
+      layouts = { layouts[2] }
+   }
+elseif location == "WORK" then
+   dbg("using work config")
    main_screen_id = 1
    mytags[2] = {
       names =  { "work" },
       layouts = { layouts[2] }
    }
+else
+   error("unsupported configuration")
 end
 
+dbg("main screen id: %d", main_screen_id)
 mytags[main_screen_id] = {
    names   = { "work",      "mail",      "www",       "irc",
 	       "im",        "av",        "game",      "rdesktop",
@@ -214,8 +244,8 @@ for s = 1, screen.count() do
         },
         mylayoutbox[s],
         mytextclock,
-	s == 1 and APW or nil,
-        s == 1 and mysystray or nil,
+	s == main_screen_id and APW or nil,
+        s == main_screen_id and mysystray or nil,
         mytasklist[s],
         layout = awful.widget.layout.horizontal.rightleft
     }
@@ -383,6 +413,8 @@ awful.rules.rules = {
       properties = { floating = true } },
     -- Set Firefox/chromium to always map on tags number www_tag_id of screen main_screen_id.
     { rule = { class = "Navigator" },
+       properties = { switchtotag = true, tag = tags[main_screen_id][www_tag_id] } },
+    { rule = { class = "Firefox" },
        properties = { switchtotag = true, tag = tags[main_screen_id][www_tag_id] } },
     -- Set Thunderbird to always map on tags number mail_tag_id of screen main_screen_id.
     { rule = { class = "Thunderbird" },

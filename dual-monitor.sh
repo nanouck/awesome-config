@@ -17,5 +17,5 @@ elif [ "$(hostname -s)" == "renndlxrdp0201" ]; then
     fi
 else
     # home
-    xrandr --output DVI-D-0 --mode 1920x1080 --primary --preferred --right-of VGA-0 --output VGA-0 --mode 1680x1050
+    xrandr --output HDMI-0 --auto --primary --preferred --output DVI-D-0 --auto --right-of HDMI-0
 fi
