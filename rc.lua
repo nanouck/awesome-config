@@ -21,10 +21,12 @@ local has_fdo, freedesktop = pcall(require, "freedesktop")
 -- Load the widget.
 local APW = require("apw/widget")
 
-function dbg (s,...)
-      file = io.open("/tmp/rc.lua.log", "a")
-      file:write(s:format(...) .. "\n")
-      file:close()
+function dbg (line,...)
+   if line ~= nil then
+      local log = io.open('/tmp/awesome_rc.log', 'a')
+      log:write(os.date('%c\t') .. line:format(...) .. '\n')
+      log:close()
+   end
 end
 
 -- {{{ Error handling
@@ -207,12 +209,12 @@ end
 -- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
 screen.connect_signal("property::geometry", set_wallpaper)
 
-dbg("Screen count")
-dbg("%s",screen.count())
+dbg("Screen count: %s",screen.count())
 
-hostname = awful.util.pread("hostname -s"):gsub("\n$", "")
+widgets = require("vicious.widgets")
+hostname = (widgets.os()[4])
+
 dbg("hostname: <%s>", hostname)
-dbg("%s", type(hostname))
 if hostname == "delyn-H87-D3H" then
    location = "HOME"
 else
@@ -620,19 +622,20 @@ function run_once(cmd)
   awful.util.spawn_with_shell("pgrep -u $USER -x " .. findme .. " > /dev/null || (" .. cmd .. ")")
 end
 
---awful.util.spawn_with_shell("numlockx")
+awful.util.spawn_with_shell("numlockx")
 --run_once("davmail")
 
 --run_once("nm-applet")
 --run_once("blueman-applet")
---run_once("thunderbird")
---run_once("firefox")
+run_once("thunderbird")
+run_once("firefox")
 --run_once("xchat")
---run_once("pidgin")
+run_once("pidgin")
 --run_once("steam")
 --run_once("spotify")
---run_once("remmina")
+run_once("remmina")
 --run_once("gnome-screensaver")
---run_once('~/.config/awesome/locker.sh')
+run_once('~/.config/awesome/locker.sh')
 --awful.util.spawn_with_shell("dropbox running && dropbox start")
 run_once("caffeine")
+run_once("keepassxc")
