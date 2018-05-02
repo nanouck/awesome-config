@@ -91,13 +91,9 @@ layouts =
 mytags = {}
 if screen.count() == 1 then
    main_screen_id = 1
-else if screen.count() == 3 then
+else if screen.count() == 2 then
    main_screen_id = 1
    mytags[2] = {
-      names =  { "work" },
-      layouts = { layouts[2] }
-   }
-   mytags[3] = {
       names =  { "work" },
       layouts = { layouts[2] }
    }
@@ -107,12 +103,15 @@ else
       names =  { "work" },
       layouts = { layouts[2] }
    }
-   
+    mytags[3] = {
+      names =  { "work" },
+      layouts = { layouts[2] }
+   }
 end
 end
 
 mytags[main_screen_id] = {
-   names   = { "work",      "mail",      "www",       "irc",
+   names   = { "work",      "mail",      "www",       "chat",
 	       "im",        "av",        "game",      "rdesktop",
 	       "p2p",       "10",        "11",        "12" },
    layouts = { layouts[2],  layouts[3],  layouts[2],  layouts[10],
@@ -123,7 +122,7 @@ mytags[main_screen_id] = {
 work_tag_id = 1
 mail_tag_id = 2
 www_tag_id = 3
-irc_tag_id = 4
+chat_tag_id = 4
 im_tag_id = 5
 av_tag_id = 6
 game_tag_id = 7
@@ -524,21 +523,28 @@ awful.rules.rules = {
       properties = { floating = true } },
     { rule = { class = "gimp" },
       properties = { floating = true } },
+    { rule = { instance = "plugin-container" },
+      properties = { floating = true } },
+    { rule = { instance = "Plugin-container" },
+      properties = { floating = true } },
     -- Set Firefox/chromium to always map on tags number www_tag_id of screen main_screen_id.
     { rule = { class = "Navigator" },
        properties = { switchtotag = true, tag = tags[main_screen_id][www_tag_id] } },
     -- Set Thunderbird to always map on tags number mail_tag_id of screen main_screen_id.
     { rule = { class = "Thunderbird" },
       properties = { tag = tags[main_screen_id][mail_tag_id] } },
-    -- Set xchat to always map on tags number irc_tag_id of screen main_screen_id.
+    -- Set xchat to always map on tags number chat_tag_id of screen main_screen_id.
     { rule = { class = "Xchat" },
-      properties = { tag = tags[main_screen_id][irc_tag_id] } },
+      properties = { tag = tags[main_screen_id][chat_tag_id] } },
     -- Set steam client to always map on tags number game_tag_id of screen main_screen_id.
     { rule = { class = "Steam" },
       properties = { tag = tags[main_screen_id][game_tag_id] } },
     -- Set spotify client to always map on tags number game_tag_id of screen main_screen_id.
     { rule = { class = "Spotify" },
       properties = { tag = tags[main_screen_id][av_tag_id] } },
+    -- Set slack client to always map on tags number chat_tag_id of screen main_screen_id.
+    { rule = { class = "Slack" },
+      properties = { tag = tags[main_screen_id][chat_tag_id] } },
     -- Set pidgin to always map on tags number im_tag_id of screen main_screen_id.
      { rule = { class = "Pidgin", role = "buddy_list" },
        properties = { floating=true,
@@ -624,21 +630,29 @@ function run_once(cmd)
 end
 
 awful.util.spawn_with_shell("numlockx")
+run_once("gnome-settings-daemon")
+run_once("gnome-keyring-daemon")
 run_once("davmail")
+run_once("indicator-cpufreq")
+awful.util.spawn_with_shell("/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1")
+-- run_once("nm-applet")
+run_once("wicd-client --tray")
 
-run_once("nm-applet")
 run_once("blueman-applet")
+run_once("system-config-printer-applet")
+-- run_once("gnome-keyring-daemon --start --components='ssh,keyring,pkcs11,gpg'")
 run_once("thunderbird")
 run_once("firefox")
 --run_once("xchat")
 run_once("pidgin")
-run_once("steam")
-run_once("spotify")
+run_once("slack")
+--run_once("steam")
+--run_once("spotify")
 run_once("remmina")
 run_once("gnome-screensaver")
 run_once('~/.config/awesome/locker.sh')
-awful.util.spawn_with_shell("dropbox running && dropbox start")
-run_once("caffeine")
+--awful.util.spawn_with_shell("dropbox running && dropbox start")
+run_once("caffeine-indicator")
 
 -- workaround
 awful.util.spawn_with_shell("setxkbmap fr")
