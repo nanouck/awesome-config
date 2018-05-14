@@ -222,13 +222,72 @@ else
 end
 dbg("location: %s", location)
 
+work_tag_id = "work"
+mail_tag_id = "mail"
+www_tag_id = "www"
+chat_tag_id = "chat"
+im_tag_id = "im"
+av_tag_id = "av"
+game_tag_id = "game"
+rdesktop_tag_id = "rdesktop"
+p2p_tag_id = "p2p"
+keyring_tag_id = "keyring"
+
+mytags = {}
+if screen.count() == 1 then
+   primary_screen_id = 1
+   secondary_screen_id = primary_screen_id
+else if screen.count() == 2 then
+   primary_screen_id = 1
+   secondary_screen_id = 2
+   mytags[secondary_screen_id] = {
+      names =  { work_tag_id, keyring_tag_id },
+      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
+   }
+else if screen.count() == 3 then
+   primary_screen_id = 3
+   secondary_screen_id = 2
+   mytags[1] = {
+      names =  { work_tag_id, keyring_tag_id },
+      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
+   }
+   mytags[secondary_screen_id] = {
+      names =  { work_tag_id, keyring_tag_id },
+      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
+   }
+else
+   primary_screen_id = 1
+   secondary_screen_id = 2
+   mytags[3] = {
+      names =  { work_tag_id, keyring_tag_id },
+      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
+   }
+   mytags[secondary_screen_id] = {
+      names =  { work_tag_id, keyring_tag_id },
+      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
+   }
+end
+end
+end
+
+mytags[primary_screen_id] = {
+   names   = { work_tag_id, mail_tag_id, www_tag_id, chat_tag_id,
+	       im_tag_id, av_tag_id, game_tag_id, rdesktop_tag_id,
+	       p2p_tag_id, "10", "11", "12" },
+   layouts = { awful.layout.layouts[2], awful.layout.layouts[3],  awful.layout.layouts[2],  awful.layout.layouts[10],
+	       awful.layout.layouts[2], awful.layout.layouts[2],  awful.layout.layouts[10], awful.layout.layouts[2],
+	       awful.layout.layouts[2], awful.layout.layouts[2],  awful.layout.layouts[2],  awful.layout.layouts[2] }
+}
+
+
 
 awful.screen.connect_for_each_screen(function(s)
     -- Wallpaper
     set_wallpaper(s)
 
     -- Each screen has its own tag table.
-    awful.tag({ "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" }, s, awful.layout.layouts[1])
+    screen_index = s.index
+    awful.tag(mytags[screen_index].names, s, mytags[screen_index].layouts)
 
     -- Create a promptbox for each screen
     s.mypromptbox = awful.widget.prompt()
@@ -259,12 +318,12 @@ awful.screen.connect_for_each_screen(function(s)
             s.mypromptbox,
         },
         s.mytasklist, -- Middle widget
---        APW or nil,
 --        mysystray or nil,
         { -- Right widgets
             layout = wibox.layout.fixed.horizontal,
             mykeyboardlayout,
             wibox.widget.systray(),
+	    APW,
             mytextclock,
             s.mylayoutbox,
         },
@@ -512,12 +571,15 @@ awful.rules.rules = {
         instance = {
           "DTA",  -- Firefox addon DownThemAll.
           "copyq",  -- Includes session name in class.
+          "plugin-container",
         },
         class = {
           "Arandr",
           "Gpick",
           "Kruler",
           "MessageWin",  -- kalarm.
+          "MPlayer",
+          "gimp",
           "Sxiv",
           "Wpa_gui",
           "pinentry",
@@ -541,6 +603,72 @@ awful.rules.rules = {
     -- Set Firefox to always map on the tag named "2" on screen 1.
     -- { rule = { class = "Firefox" },
     --   properties = { screen = 1, tag = "2" } },
+    -- Set Firefox/chromium to always map on tags number www_tag_id of screen primary_screen_id.
+    { rule = { class = "Firefox" },
+       properties = { screen = primary_screen_id, tag = www_tag_id } },
+    -- Set Thunderbird to always map on tags number mail_tag_id of screen primary_screen_id.
+    { rule = { class = "Thunderbird" },
+      properties = { screen = primary_screen_id, tag = mail_tag_id } },
+    -- Set xchat to always map on tags number chat_tag_id of screen primary_screen_id.
+    { rule = { class = "Xchat" },
+      properties = { screen = primary_screen_id, tag = chat_tag_id } },
+    -- Set steam client to always map on tags number game_tag_id of screen primary_screen_id.
+    { rule = { class = "Steam" },
+      properties = { screen = primary_screen_id, tag = game_tag_id } },
+    -- Set spotify client to always map on tags number game_tag_id of screen primary_screen_id.
+    { rule = { class = "Spotify" },
+      properties = { screen = primary_screen_id, tag = av_tag_id } },
+    -- Set slack client to always map on tags number chat_tag_id of screen primary_screen_id.
+    { rule = { class = "Slack" },
+      properties = { screen = primary_screen_id, tag = chat_tag_id } },
+    -- Set pidgin to always map on tags number im_tag_id of screen primary_screen_id.
+     { rule = { class = "Pidgin", role = "buddy_list" },
+       properties = { floating=true,
+		      maximized_vertical=true, maximized_horizontal=false,
+		      screen = primary_screen_id,
+		      tag = im_tag_id },
+      callback = function (c)
+        local cl_width = 250    -- width of buddy list window
+        local def_left = true   -- default placement. note: you have to restart
+                                -- pidgin for changes to take effect
+
+        local scr_area = screen[c.screen].workarea
+        local cl_strut = c:struts()
+        local geometry = nil
+
+        -- adjust scr_area for this client's struts
+        if cl_strut ~= nil then
+            if cl_strut.left ~= nil and cl_strut.left > 0 then
+                geometry = {x=scr_area.x-cl_strut.left, y=scr_area.y,
+                            width=cl_strut.left}
+            elseif cl_strut.right ~= nil and cl_strut.right > 0 then
+                geometry = {x=scr_area.x+scr_area.width, y=scr_area.y,
+                            width=cl_strut.right}
+            end
+	    dbg(geometry)
+        end
+        -- scr_area is unaffected, so we can use the naive coordinates
+        if geometry == nil then
+            if def_left then
+                c:struts({left=cl_width, right=0})
+                geometry = {x=scr_area.x, y=scr_area.y,
+                            width=cl_width, height=scr_area.height-20}
+            else
+                c:struts({right=cl_width, left=0})
+                geometry = {x=scr_area.x+scr_area.width-cl_width, y=scr_area.y,
+                            width=cl_width, height=scr_area.height}
+            end
+	    dbg(geometry)
+        end
+        c:geometry(geometry)
+    end },
+    -- Set Remmina to always map on tags number rdesktop_tag_id of screen primary_screen_id.
+    { rule = { class = "Remmina" },
+      properties = { screen = primary_screen_id, tag = rdesktop_tag_id } },
+    -- Set Keepassxc to always map on tags number privacy_tag_id of screen primary_screen_id.
+    { rule = { class = "Remmina" },
+      properties = { screen = primary_screen_id, tag = privacy_tag_id } },
+    privacy_tag_id
 }
 -- }}}
 
@@ -623,19 +751,20 @@ function run_once(cmd)
 end
 
 awful.util.spawn_with_shell("numlockx")
---run_once("davmail")
-
---run_once("nm-applet")
---run_once("blueman-applet")
+run_once("nm-applet")
+run_once("blueman-applet")
 run_once("thunderbird")
 run_once("firefox")
---run_once("xchat")
 run_once("pidgin")
---run_once("steam")
---run_once("spotify")
-run_once("remmina")
---run_once("gnome-screensaver")
-run_once('~/.config/awesome/locker.sh')
---awful.util.spawn_with_shell("dropbox running && dropbox start")
 run_once("caffeine")
 run_once("keepassxc")
+if location == "HOME" then
+   run_once("xchat")
+   run_once("steam")
+   run_once("spotify")
+   awful.util.spawn_with_shell("dropbox running && dropbox start")
+else
+   run_once("davmail")
+   run_once("remmina")
+end
+run_once('~/.config/awesome/locker.sh')

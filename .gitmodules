@@ -1,7 +1,6 @@
-[submodule "./apw"]
-	path = apw
-	url = https://github.com/gehaxelt/apw
+
 [submodule "apw"]
 	path = apw
-	url = https://github.com/gehaxelt/apw
+	#url = https://github.com/gehaxelt/apw
+	url = https://github.com/actionless/apw
 	branch = master
