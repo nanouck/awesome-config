@@ -20,10 +20,10 @@ elif [ "$(hostname -s)" == "RENNLLXRDL4480" ]; then
 	xrandr -q |grep -w connected |grep -q DP-1-1
 	if [ $? -eq 0 ]; then
 	    xrandr --output HDMI-1 --off
-	    xrandr --output DP-1-1 --auto --primary --preferred --output DP-1-2 --auto --right-of DP-1-1 --output eDP-1 --auto --left-of DP-1-1
+	    xrandr --output eDP-1 --auto --output DP-1-1 --auto --primary --preferred --right-of eDP-1 --output DP-1-2 --auto --right-of DP-1-1
 	else
 	    xrandr --output DP-1-1 --off --output DP-1-2 --off
-	    xrandr --output HDMI-1 --auto --primary --preferred --output DP-1 --auto --right-of HDMI-1 --output eDP-1 --auto --left-of HDMI-1
+	    xrandr --output eDP-1 --auto --output HDMI-1 --auto --primary --preferred --right-of eDP-1 --output DP-1 --auto --right-of HDMI-1
 	fi
     elif [ $nb_display -eq 2 ]; then
 	xrandr -q |grep -w connected |grep -q DP-1-1
@@ -31,8 +31,10 @@ elif [ "$(hostname -s)" == "RENNLLXRDL4480" ]; then
 	    xrandr --output HDMI-1 --off --output DP-1-2 --off
 	    xrandr --output eDP-1 --auto --primary --preferred --output DP-1-1 --auto --right-of eDP-1
 	else
-	    xrandr --output DP-2 --off --output HDMI-2 --off
-	    xrandr --output eDP-1 --auto --primary --preferred --output HDMI-1 --auto --right-of eDP-1
+	    xrandr --output DP-2 --off --output HDMI-2 --off --output HDMI-1 --off
+        #xrandr --output eDP-1 --auto --primary --preferred --output HDMI-1 --auto --same-as eDP-1
+        xrandr --output eDP-1 --auto --primary --preferred --output HDMI-1 --auto --right-of eDP-1
+	
 	fi
     else
 	xrandr --output DP-1-1 --off --output HDMI-1 --off --output DP-1-2 --off --output HDMI-2 --off

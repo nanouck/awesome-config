@@ -234,37 +234,25 @@ p2p_tag_id = "p2p"
 keyring_tag_id = "keyring"
 
 mytags = {}
+primary_screen_id = 1
 if screen.count() == 1 then
-   primary_screen_id = 1
    secondary_screen_id = primary_screen_id
 else if screen.count() == 2 then
+   secondary_screen_id = 2
+   mytags[secondary_screen_id] = {
+      names =  { www_tag_id, work_tag_id },
+      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
+   }
+else if screen.count() >= 3 then
    primary_screen_id = 1
-   secondary_screen_id = 2
-   mytags[secondary_screen_id] = {
-      names =  { work_tag_id, keyring_tag_id },
-      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
-   }
-else if screen.count() == 3 then
-   primary_screen_id = 3
-   secondary_screen_id = 2
-   mytags[1] = {
-      names =  { work_tag_id, keyring_tag_id },
-      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
+   secondary_screen_id = 3
+   mytags[2] = {
+      names =  { work_tag_id },
+      layouts = { awful.layout.layouts[2] }
    }
    mytags[secondary_screen_id] = {
-      names =  { work_tag_id, keyring_tag_id },
-      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
-   }
-else
-   primary_screen_id = 1
-   secondary_screen_id = 2
-   mytags[3] = {
-      names =  { work_tag_id, keyring_tag_id },
-      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
-   }
-   mytags[secondary_screen_id] = {
-      names =  { work_tag_id, keyring_tag_id },
-      layouts = { awful.layout.layouts[2], awful.layout.layouts[2] }
+      names =  { work_tag_id, keyring_tag_id, www_tag_id },
+      layouts = { awful.layout.layouts[2], awful.layout.layouts[2], awful.layout.layouts[2] }
    }
 end
 end
@@ -273,13 +261,17 @@ end
 mytags[primary_screen_id] = {
    names   = { work_tag_id, mail_tag_id, www_tag_id, chat_tag_id,
 	       im_tag_id, av_tag_id, game_tag_id, rdesktop_tag_id,
-	       p2p_tag_id, "10", "11", "12" },
+	       p2p_tag_id, keyring_tag_id, "11", "12" },
    layouts = { awful.layout.layouts[2], awful.layout.layouts[3],  awful.layout.layouts[2],  awful.layout.layouts[10],
 	       awful.layout.layouts[2], awful.layout.layouts[2],  awful.layout.layouts[10], awful.layout.layouts[2],
 	       awful.layout.layouts[2], awful.layout.layouts[2],  awful.layout.layouts[2],  awful.layout.layouts[2] }
 }
 
-
+if screen.count() <= 2 then
+   keyring_screen_id = primary_screen_id
+else
+   keyring_screen_id = secondary_screen_id
+end
 
 awful.screen.connect_for_each_screen(function(s)
     -- Wallpaper
@@ -287,6 +279,10 @@ awful.screen.connect_for_each_screen(function(s)
 
     -- Each screen has its own tag table.
     screen_index = s.index
+    if screen_index == nil then
+       screen_index = 1
+    end
+    dbg("screen index: %s", screen_index)
     awful.tag(mytags[screen_index].names, s, mytags[screen_index].layouts)
 
     -- Create a promptbox for each screen
@@ -605,7 +601,7 @@ awful.rules.rules = {
     --   properties = { screen = 1, tag = "2" } },
     -- Set Firefox/chromium to always map on tags number www_tag_id of screen primary_screen_id.
     { rule = { class = "Firefox" },
-       properties = { screen = primary_screen_id, tag = www_tag_id } },
+       properties = { screen = secondary_screen_id, tag = www_tag_id } },
     -- Set Thunderbird to always map on tags number mail_tag_id of screen primary_screen_id.
     { rule = { class = "Thunderbird" },
       properties = { screen = primary_screen_id, tag = mail_tag_id } },
@@ -666,8 +662,8 @@ awful.rules.rules = {
     { rule = { class = "Remmina" },
       properties = { screen = primary_screen_id, tag = rdesktop_tag_id } },
     -- Set Keepassxc to always map on tags number privacy_tag_id of screen primary_screen_id.
-    { rule = { class = "Remmina" },
-      properties = { screen = primary_screen_id, tag = privacy_tag_id } },
+    { rule = { class = "keepassxc" },
+      properties = { screen = keyring_screen_id, tag = keyring_tag_id } },
     privacy_tag_id
 }
 -- }}}
